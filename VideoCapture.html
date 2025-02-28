@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pyroun-Capture Video</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+            background-image: url("tw.jpg"); /* Change to your image */
+            background-size: cover; /* Options: cover, contain, or custom sizes */
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+        button {
+            margin: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        #start {
+            background-color: #4CAF50;
+            color: white;
+        }
+        #stop {
+            background-color: #d9534f;
+            color: white;
+        }
+        #download {
+            display: none;
+            color: blue;
+            font-size: 18px;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+        /* 5cm x 5cm Video Preview */
+        video {
+            width: 20cm;
+            height: 13cm;
+            margin-top: 10px;
+            border: 2px solid black;
+            background-color: white; /* Ensures visibility */
+        }
+    </style>
+</head>
+<body>
+    <h1>Pyroun-Capture Video</h1>
+    <button id="start">Start Recording</button>
+    <button id="stop" disabled>Stop Recording</button>
+    <br>
+    <a id="download" download="recorded-video.webm">Download Recorded Video</a>
+    <br>
+    <video id="preview" autoplay playsinline></video>
+
+    <script>
+        let mediaRecorder;
+        let recordedChunks = [];
+        let stream;
+
+        document.getElementById('start').addEventListener('click', async () => {
+            try {
+                stream = await navigator.mediaDevices.getDisplayMedia({
+                    video: true,
+                    audio: { echoCancellation: true, noiseSuppression: true }
+                });
+
+                document.getElementById('preview').srcObject = stream;
+
+                mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+                mediaRecorder.ondataavailable = event => recordedChunks.push(event.data);
+                mediaRecorder.onstop = saveVideo;
+
+                mediaRecorder.start();
+
+                document.getElementById('start').disabled = true;
+                document.getElementById('stop').disabled = false;
+            } catch (err) {
+                console.error("Error starting screen recording:", err);
+            }
+        });
+
+        document.getElementById('stop').addEventListener('click', () => {
+            mediaRecorder.stop();
+            stream.getTracks().forEach(track => track.stop()); // Stop screen sharing
+
+            document.getElementById('stop').disabled = true;
+            document.getElementById('start').disabled = false;
+        });
+
+        function saveVideo() {
+            const blob = new Blob(recordedChunks, { type: 'video/webm' });
+            const url = URL.createObjectURL(blob);
+            const a = document.getElementById('download');
+            a.href = url;
+            a.style.display = 'block';
+            a.textContent = "Download Recorded Video";
+        }
+    </script>
+</body>
+</html>
